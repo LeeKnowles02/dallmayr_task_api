@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum UserRole {
+  Admin
+  Technician
+}
+
+enum TaskStatus {
+  Pending
+  Assigned
+  InProgress
+  Completed
+  Cancelled
+}
+
+enum TaskType {
+  Installation
+  Refurbishment
+  Maintenance
+  Repair
+  Collection
+}
+
+enum TaskPriority {
+  Low
+  Medium
+  High
+  Urgent
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  fullName     String   @db.VarChar(150)
+  email        String   @unique @db.VarChar(200)
+  passwordHash String
+  phoneNumber  String?
+  role         UserRole
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignedTasks TaskItem[]    @relation("TechnicianTasks")
+  taskHistories TaskHistory[] @relation("ChangedByUser")
+  taskPhotos    TaskPhoto[]   @relation("UploadedByUser")
+
+  @@map("users")
+}
+
+model Customer {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(200)
+  contactPerson String?
+  contactNumber String?
+  email         String?
+  location      String?
+  address       String?
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  machines Machine[]
+  tasks    TaskItem[]
+
+  @@map("customers")
+}
+
+model Machine {
+  id           Int      @id @default(autoincrement())
+  machineName  String   @db.VarChar(200)
+  serialNumber String   @unique @db.VarChar(100)
+  machineType  String   @db.VarChar(100)
+  customerId   Int?
+  location     String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customer Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  tasks    TaskItem[]
+
+  @@map("machines")
+}
+
+model TaskItem {
+  id              Int          @id @default(autoincrement())
+  title           String       @db.VarChar(300)
+  description     String?      @db.Text
+  customerId      Int?
+  machineId       Int?
+  technicianId    Int?
+  taskType        TaskType
+  status          TaskStatus   @default(Pending)
+  priority        TaskPriority
+  dueDate         DateTime?
+  completionNotes String?      @db.Text
+  completedAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  customer   Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  machine    Machine?      @relation(fields: [machineId], references: [id], onDelete: SetNull)
+  technician User?         @relation("TechnicianTasks", fields: [technicianId], references: [id], onDelete: SetNull)
+  history    TaskHistory[]
+  photos     TaskPhoto[]
+
+  @@map("task_items")
+}
+
+model TaskHistory {
+  id              Int         @id @default(autoincrement())
+  taskItemId      Int
+  changedByUserId Int
+  action          String      @db.VarChar(100)
+  oldStatus       TaskStatus?
+  newStatus       TaskStatus?
+  notes           String?     @db.Text
+  createdAt       DateTime    @default(now())
+
+  taskItem  TaskItem @relation(fields: [taskItemId], references: [id], onDelete: Cascade)
+  changedBy User     @relation("ChangedByUser", fields: [changedByUserId], references: [id], onDelete: Restrict)
+
+  @@map("task_histories")
+}
+
+model TaskPhoto {
+  id               Int      @id @default(autoincrement())
+  taskItemId       Int
+  uploadedByUserId Int
+  fileName         String   @db.VarChar(300)
+  filePath         String   @db.VarChar(500)
+  contentType      String   @db.VarChar(100)
+  uploadedAt       DateTime @default(now())
+
+  taskItem   TaskItem @relation(fields: [taskItemId], references: [id], onDelete: Cascade)
+  uploadedBy User     @relation("UploadedByUser", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+
+  @@map("task_photos")
+}
