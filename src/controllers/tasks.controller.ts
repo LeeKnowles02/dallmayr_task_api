@@ -6,6 +6,7 @@ import {
   taskFilterSchema,
 } from "../dtos/tasks.dto";
 import { prisma } from "../lib/prisma";
+import { buildPaginatedResponse, parsePagination } from "../lib/paginate";
 import { createTaskHistory } from "../services/taskHistory.service";
 import { upload } from "../services/fileStorage.service";
 
@@ -24,18 +25,27 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
     return;
   }
   const { status, priority, technicianId, customerId } = parsed.data;
+  const { page, limit } = parsePagination(req.query);
 
-  const tasks = await prisma.taskItem.findMany({
-    where: {
-      ...(status && { status }),
-      ...(priority && { priority }),
-      ...(technicianId && { technicianId }),
-      ...(customerId && { customerId }),
-    },
-    include: taskInclude,
-    orderBy: { createdAt: "desc" },
-  });
-  res.json(tasks);
+  const where = {
+    ...(status && { status }),
+    ...(priority && { priority }),
+    ...(technicianId && { technicianId }),
+    ...(customerId && { customerId }),
+  };
+
+  const [tasks, total] = await Promise.all([
+    prisma.taskItem.findMany({
+      where,
+      include: taskInclude,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.taskItem.count({ where }),
+  ]);
+
+  res.json(buildPaginatedResponse(tasks, total, page, limit));
 };
 
 export const getTaskById = async (
@@ -129,15 +139,21 @@ export const getTaskHistory = async (
     return;
   }
 
-  const history = await prisma.taskHistory.findMany({
-    where: { taskItemId: taskId },
-    include: {
-      changedBy: { omit: { passwordHash: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const { page, limit } = parsePagination(req.query);
+  const where = { taskItemId: taskId };
 
-  res.json(history);
+  const [history, total] = await Promise.all([
+    prisma.taskHistory.findMany({
+      where,
+      include: { changedBy: { omit: { passwordHash: true } } },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.taskHistory.count({ where }),
+  ]);
+
+  res.json(buildPaginatedResponse(history, total, page, limit));
 };
 
 export const getMyTasks = async (
@@ -150,17 +166,26 @@ export const getMyTasks = async (
     return;
   }
   const { status, priority } = parsed.data;
+  const { page, limit } = parsePagination(req.query);
 
-  const tasks = await prisma.taskItem.findMany({
-    where: {
-      technicianId: req.user!.userId,
-      ...(status && { status }),
-      ...(priority && { priority }),
-    },
-    include: taskInclude,
-    orderBy: { createdAt: "desc" },
-  });
-  res.json(tasks);
+  const where = {
+    technicianId: req.user!.userId,
+    ...(status && { status }),
+    ...(priority && { priority }),
+  };
+
+  const [tasks, total] = await Promise.all([
+    prisma.taskItem.findMany({
+      where,
+      include: taskInclude,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.taskItem.count({ where }),
+  ]);
+
+  res.json(buildPaginatedResponse(tasks, total, page, limit));
 };
 
 export const getMyTaskById = async (
@@ -218,6 +243,64 @@ export const updateTaskStatus = async (
   });
 
   res.json(updatedTask);
+};
+
+export const getTaskPhotos = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const taskId = parseInt(req.params.id as string);
+
+  const task = await prisma.taskItem.findUnique({ where: { id: taskId } });
+
+  if (!task) {
+    res.status(404).json({ message: "Task not found" });
+    return;
+  }
+
+  const photos = await prisma.taskPhoto.findMany({
+    where: { taskItemId: taskId },
+    orderBy: { uploadedAt: "desc" },
+  });
+
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+  res.json(
+    photos.map((photo) => ({
+      ...photo,
+      photoUrl: `${baseUrl}/uploads/${photo.filePath.split(/[\\/]/).pop()}`,
+    }))
+  );
+};
+
+export const getMyTaskPhotos = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const taskId = parseInt(req.params.id as string);
+
+  const task = await prisma.taskItem.findFirst({
+    where: { id: taskId, technicianId: req.user!.userId },
+  });
+
+  if (!task) {
+    res.status(404).json({ message: "Task not found or not assigned to you" });
+    return;
+  }
+
+  const photos = await prisma.taskPhoto.findMany({
+    where: { taskItemId: taskId },
+    orderBy: { uploadedAt: "desc" },
+  });
+
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+  res.json(
+    photos.map((photo) => ({
+      ...photo,
+      photoUrl: `${baseUrl}/uploads/${photo.filePath.split(/[\\/]/).pop()}`,
+    }))
+  );
 };
 
 export const uploadTaskPhoto = [

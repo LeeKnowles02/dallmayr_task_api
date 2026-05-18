@@ -5,6 +5,7 @@ import path from "path";
 import { errorHandler } from "./middleware/errorHandler";
 import { authRouter } from "./routes/auth.routes";
 import { customersRouter } from "./routes/customers.routes";
+import { dashboardRouter } from "./routes/dashboard.routes";
 import { machinesRouter } from "./routes/machines.routes";
 import { tasksRouter } from "./routes/tasks.routes";
 import { usersRouter } from "./routes/users.routes";
@@ -22,6 +23,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/customers", customersRouter);
 app.use("/api/machines", machinesRouter);
 app.use("/api/tasks", tasksRouter);
+app.use("/api/dashboard", dashboardRouter);
 
 app.use(errorHandler);
 

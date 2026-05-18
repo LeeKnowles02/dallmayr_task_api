@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { CreateTechnicianRequest, ResetTechnicianPasswordRequest, UpdateTechnicianRequest } from "../dtos/users.dto";
 import { prisma } from "../lib/prisma";
+import { buildPaginatedResponse, parsePagination } from "../lib/paginate";
 import { hashPassword } from "../services/password.service";
 import { User } from "../generated/prisma/client";
 
@@ -10,15 +11,23 @@ const excludePassword = (user: User) => {
 };
 
 export const getTechnicians = async (
-  _req: Request,
+  req: Request,
   res: Response
 ): Promise<void> => {
-  const technicians = await prisma.user.findMany({
-    where: { role: "Technician" },
-    orderBy: { createdAt: "desc" },
-  });
+  const { page, limit } = parsePagination(req.query);
+  const where = { role: "Technician" as const };
 
-  res.json(technicians.map(excludePassword));
+  const [technicians, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  res.json(buildPaginatedResponse(technicians.map(excludePassword), total, page, limit));
 };
 
 export const getTechnicianById = async (

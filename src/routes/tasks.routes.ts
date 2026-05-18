@@ -2,9 +2,11 @@ import { Router } from "express";
 import {
   createTask,
   getMyTaskById,
+  getMyTaskPhotos,
   getMyTasks,
   getTaskById,
   getTaskHistory,
+  getTaskPhotos,
   getTasks,
   updateTask,
   updateTaskStatus,
@@ -21,6 +23,7 @@ tasksRouter.use(authenticate);
 
 tasksRouter.get("/my-tasks", authorise("Technician"), getMyTasks);
 tasksRouter.get("/my-tasks/:id", authorise("Technician"), getMyTaskById);
+tasksRouter.get("/my-tasks/:id/photos", authorise("Technician"), getMyTaskPhotos);
 tasksRouter.patch("/:id/status", authorise("Technician"), validate(updateTaskStatusSchema), updateTaskStatus);
 tasksRouter.post("/:id/photo", authorise("Technician"), ...uploadTaskPhoto);
 
@@ -29,3 +32,4 @@ tasksRouter.post("/", authorise("Admin"), validate(createTaskSchema), createTask
 tasksRouter.get("/:id", authorise("Admin"), getTaskById);
 tasksRouter.put("/:id", authorise("Admin"), validate(updateTaskSchema), updateTask);
 tasksRouter.get("/:id/history", authorise("Admin"), getTaskHistory);
+tasksRouter.get("/:id/photos", authorise("Admin"), getTaskPhotos);

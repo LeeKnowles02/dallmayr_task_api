@@ -4,15 +4,24 @@ import {
   UpdateCustomerRequest,
 } from "../dtos/customers.dto";
 import { prisma } from "../lib/prisma";
+import { buildPaginatedResponse, parsePagination } from "../lib/paginate";
 
 export const getCustomers = async (
-  _req: Request,
+  req: Request,
   res: Response
 ): Promise<void> => {
-  const customers = await prisma.customer.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-  res.json(customers);
+  const { page, limit } = parsePagination(req.query);
+
+  const [customers, total] = await Promise.all([
+    prisma.customer.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.customer.count(),
+  ]);
+
+  res.json(buildPaginatedResponse(customers, total, page, limit));
 };
 
 export const getCustomerById = async (

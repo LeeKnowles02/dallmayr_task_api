@@ -4,16 +4,25 @@ import {
   UpdateMachineRequest,
 } from "../dtos/machines.dto";
 import { prisma } from "../lib/prisma";
+import { buildPaginatedResponse, parsePagination } from "../lib/paginate";
 
 export const getMachines = async (
-  _req: Request,
+  req: Request,
   res: Response
 ): Promise<void> => {
-  const machines = await prisma.machine.findMany({
-    include: { customer: true },
-    orderBy: { createdAt: "desc" },
-  });
-  res.json(machines);
+  const { page, limit } = parsePagination(req.query);
+
+  const [machines, total] = await Promise.all([
+    prisma.machine.findMany({
+      include: { customer: true },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.machine.count(),
+  ]);
+
+  res.json(buildPaginatedResponse(machines, total, page, limit));
 };
 
 export const getMachineById = async (
