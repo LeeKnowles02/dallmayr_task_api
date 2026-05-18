@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables (contains secrets)
+.env
+
+# Uploads (runtime generated)
+src/uploads/
+
+# Prisma generated client
+# (keep schema.prisma but not generated files)
+prisma/migrations/**/migration_lock.toml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
