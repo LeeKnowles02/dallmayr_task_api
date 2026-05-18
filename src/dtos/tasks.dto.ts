@@ -42,6 +42,9 @@ export const taskFilterSchema = z.object({
   priority: z.enum(taskPriorityValues).optional(),
   technicianId: z.coerce.number().int().positive().optional(),
   customerId: z.coerce.number().int().positive().optional(),
+  dateFrom: z.string().date().optional(),
+  dateTo: z.string().date().optional(),
+  search: z.string().trim().min(1).optional(),
 });
 
 export type CreateTaskRequest = z.infer<typeof createTaskSchema>;

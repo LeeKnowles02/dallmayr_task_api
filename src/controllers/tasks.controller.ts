@@ -24,7 +24,7 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
     res.status(400).json({ message: "Invalid query params", errors: parsed.error.flatten().fieldErrors });
     return;
   }
-  const { status, priority, technicianId, customerId } = parsed.data;
+  const { status, priority, technicianId, customerId, dateFrom, dateTo, search } = parsed.data;
   const pagination = parsePagination(req.query);
 
   if (!pagination.success) {
@@ -37,12 +37,78 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
 
   const { page, limit } = pagination.data;
 
-  const where = {
-    ...(status && { status }),
-    ...(priority && { priority }),
-    ...(technicianId && { technicianId }),
-    ...(customerId && { customerId }),
-  };
+  const andConditions: Record<string, unknown>[] = [
+    ...(status ? [{ status }] : []),
+    ...(priority ? [{ priority }] : []),
+    ...(technicianId ? [{ technicianId }] : []),
+    ...(customerId ? [{ customerId }] : []),
+  ];
+
+  if (search) {
+    andConditions.push({
+      OR: [
+        {
+          title: {
+            contains: search,
+          },
+        },
+        {
+          customer: {
+            is: {
+              name: {
+                contains: search,
+              },
+            },
+          },
+        },
+        {
+          technician: {
+            is: {
+              fullName: {
+                contains: search,
+              },
+            },
+          },
+        },
+      ],
+    });
+  }
+
+  const dateRangeOrConditions: Record<string, unknown>[] = [];
+
+  if (dateFrom) {
+    const fromDate = new Date(`${dateFrom}T00:00:00.000Z`);
+
+    dateRangeOrConditions.push(
+      { completedAt: { gte: fromDate } },
+      {
+        AND: [
+          { completedAt: null },
+          { dueDate: { gte: fromDate } },
+        ],
+      }
+    );
+  }
+
+  if (dateTo) {
+    const toDate = new Date(`${dateTo}T23:59:59.999Z`);
+
+    dateRangeOrConditions.push(
+      { completedAt: { lte: toDate } },
+      {
+        AND: [
+          { completedAt: null },
+          { dueDate: { lte: toDate } },
+        ],
+      }
+    );
+  }
+
+  if (dateRangeOrConditions.length > 0) {
+    andConditions.push({ OR: dateRangeOrConditions });
+  }
+
+  const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
   const [tasks, total] = await Promise.all([
     prisma.taskItem.findMany({
