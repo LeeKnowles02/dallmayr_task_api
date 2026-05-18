@@ -10,7 +10,17 @@ export const getMachines = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { page, limit } = parsePagination(req.query);
+  const pagination = parsePagination(req.query);
+
+  if (!pagination.success) {
+    res.status(400).json({
+      message: "Invalid query params",
+      errors: pagination.errors,
+    });
+    return;
+  }
+
+  const { page, limit } = pagination.data;
 
   const [machines, total] = await Promise.all([
     prisma.machine.findMany({

@@ -23,16 +23,24 @@ export const getDashboard = async (
       }),
     ]);
 
-  const tasksByStatus = Object.fromEntries(
+  const groupedCounts = Object.fromEntries(
     statusCounts.map((row) => [row.status, row._count.id])
   ) as Record<string, number>;
 
-  const openTasks =
-    (tasksByStatus["Pending"] ?? 0) +
-    (tasksByStatus["Assigned"] ?? 0) +
-    (tasksByStatus["InProgress"] ?? 0);
+  const tasksByStatus = {
+    Pending: groupedCounts.Pending ?? 0,
+    Assigned: groupedCounts.Assigned ?? 0,
+    InProgress: groupedCounts.InProgress ?? 0,
+    Completed: groupedCounts.Completed ?? 0,
+    Cancelled: groupedCounts.Cancelled ?? 0,
+  };
 
-  const completedTasks = tasksByStatus["Completed"] ?? 0;
+  const openTasks =
+    tasksByStatus.Pending +
+    tasksByStatus.Assigned +
+    tasksByStatus.InProgress;
+
+  const completedTasks = tasksByStatus.Completed;
 
   res.json({
     tasksByStatus,

@@ -25,7 +25,17 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
     return;
   }
   const { status, priority, technicianId, customerId } = parsed.data;
-  const { page, limit } = parsePagination(req.query);
+  const pagination = parsePagination(req.query);
+
+  if (!pagination.success) {
+    res.status(400).json({
+      message: "Invalid query params",
+      errors: pagination.errors,
+    });
+    return;
+  }
+
+  const { page, limit } = pagination.data;
 
   const where = {
     ...(status && { status }),
@@ -139,7 +149,17 @@ export const getTaskHistory = async (
     return;
   }
 
-  const { page, limit } = parsePagination(req.query);
+  const pagination = parsePagination(req.query);
+
+  if (!pagination.success) {
+    res.status(400).json({
+      message: "Invalid query params",
+      errors: pagination.errors,
+    });
+    return;
+  }
+
+  const { page, limit } = pagination.data;
   const where = { taskItemId: taskId };
 
   const [history, total] = await Promise.all([
@@ -166,7 +186,17 @@ export const getMyTasks = async (
     return;
   }
   const { status, priority } = parsed.data;
-  const { page, limit } = parsePagination(req.query);
+  const pagination = parsePagination(req.query);
+
+  if (!pagination.success) {
+    res.status(400).json({
+      message: "Invalid query params",
+      errors: pagination.errors,
+    });
+    return;
+  }
+
+  const { page, limit } = pagination.data;
 
   const where = {
     technicianId: req.user!.userId,

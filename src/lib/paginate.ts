@@ -15,8 +15,32 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-export function parsePagination(query: unknown): PaginationQuery {
-  return paginationSchema.parse(query);
+export interface PaginationParseResult {
+  success: true;
+  data: PaginationQuery;
+}
+
+export interface PaginationParseError {
+  success: false;
+  errors: Record<string, string[] | undefined>;
+}
+
+export function parsePagination(
+  query: unknown
+): PaginationParseResult | PaginationParseError {
+  const result = paginationSchema.safeParse(query);
+
+  if (!result.success) {
+    return {
+      success: false,
+      errors: result.error.flatten().fieldErrors,
+    };
+  }
+
+  return {
+    success: true,
+    data: result.data,
+  };
 }
 
 export function buildPaginatedResponse<T>(

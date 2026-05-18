@@ -14,7 +14,17 @@ export const getTechnicians = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { page, limit } = parsePagination(req.query);
+  const pagination = parsePagination(req.query);
+
+  if (!pagination.success) {
+    res.status(400).json({
+      message: "Invalid query params",
+      errors: pagination.errors,
+    });
+    return;
+  }
+
+  const { page, limit } = pagination.data;
   const where = { role: "Technician" as const };
 
   const [technicians, total] = await Promise.all([
