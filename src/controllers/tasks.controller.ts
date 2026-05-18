@@ -216,6 +216,8 @@ export const uploadTaskPhoto = [
       return;
     }
 
+    const photoUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+
     const photo = await prisma.taskPhoto.create({
       data: {
         taskItemId: taskId,
@@ -232,6 +234,6 @@ export const uploadTaskPhoto = [
       action: "PhotoUploaded",
     });
 
-    res.status(201).json(photo);
+    res.status(201).json({ ...photo, photoUrl });
   },
 ];
