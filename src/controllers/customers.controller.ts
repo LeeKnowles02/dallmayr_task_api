@@ -4,15 +4,34 @@ import {
   UpdateCustomerRequest,
 } from "../dtos/customers.dto";
 import { prisma } from "../lib/prisma";
+import { buildPaginatedResponse, parsePagination } from "../lib/paginate";
 
 export const getCustomers = async (
-  _req: Request,
+  req: Request,
   res: Response
 ): Promise<void> => {
-  const customers = await prisma.customer.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-  res.json(customers);
+  const pagination = parsePagination(req.query);
+
+  if (!pagination.success) {
+    res.status(400).json({
+      message: "Invalid query params",
+      errors: pagination.errors,
+    });
+    return;
+  }
+
+  const { page, limit } = pagination.data;
+
+  const [customers, total] = await Promise.all([
+    prisma.customer.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.customer.count(),
+  ]);
+
+  res.json(buildPaginatedResponse(customers, total, page, limit));
 };
 
 export const getCustomerById = async (

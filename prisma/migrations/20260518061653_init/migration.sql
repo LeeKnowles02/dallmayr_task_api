@@ -1,4 +1,3 @@
--- CreateTable
 CREATE TABLE `users` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `fullName` VARCHAR(150) NOT NULL,
@@ -14,7 +13,6 @@ CREATE TABLE `users` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateTable
 CREATE TABLE `customers` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(200) NOT NULL,
@@ -30,7 +28,6 @@ CREATE TABLE `customers` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateTable
 CREATE TABLE `machines` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `machineName` VARCHAR(200) NOT NULL,
@@ -46,7 +43,6 @@ CREATE TABLE `machines` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateTable
 CREATE TABLE `task_items` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `title` VARCHAR(300) NOT NULL,
@@ -66,7 +62,6 @@ CREATE TABLE `task_items` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateTable
 CREATE TABLE `task_histories` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `taskItemId` INTEGER NOT NULL,
@@ -80,7 +75,6 @@ CREATE TABLE `task_histories` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateTable
 CREATE TABLE `task_photos` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `taskItemId` INTEGER NOT NULL,
@@ -93,26 +87,18 @@ CREATE TABLE `task_photos` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- AddForeignKey
 ALTER TABLE `machines` ADD CONSTRAINT `machines_customerId_fkey` FOREIGN KEY (`customerId`) REFERENCES `customers`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE `task_items` ADD CONSTRAINT `task_items_customerId_fkey` FOREIGN KEY (`customerId`) REFERENCES `customers`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE `task_items` ADD CONSTRAINT `task_items_machineId_fkey` FOREIGN KEY (`machineId`) REFERENCES `machines`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE `task_items` ADD CONSTRAINT `task_items_technicianId_fkey` FOREIGN KEY (`technicianId`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE `task_histories` ADD CONSTRAINT `task_histories_taskItemId_fkey` FOREIGN KEY (`taskItemId`) REFERENCES `task_items`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE `task_histories` ADD CONSTRAINT `task_histories_changedByUserId_fkey` FOREIGN KEY (`changedByUserId`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE `task_photos` ADD CONSTRAINT `task_photos_taskItemId_fkey` FOREIGN KEY (`taskItemId`) REFERENCES `task_items`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE `task_photos` ADD CONSTRAINT `task_photos_uploadedByUserId_fkey` FOREIGN KEY (`uploadedByUserId`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

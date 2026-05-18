@@ -13,5 +13,10 @@ export const updateTechnicianSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+export const resetTechnicianPasswordSchema = z.object({
+  newPassword: z.string().min(8),
+});
+
 export type CreateTechnicianRequest = z.infer<typeof createTechnicianSchema>;
 export type UpdateTechnicianRequest = z.infer<typeof updateTechnicianSchema>;
+export type ResetTechnicianPasswordRequest = z.infer<typeof resetTechnicianPasswordSchema>;
