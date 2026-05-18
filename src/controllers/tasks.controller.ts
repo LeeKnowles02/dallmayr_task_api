@@ -3,6 +3,7 @@ import {
   CreateTaskRequest,
   UpdateTaskRequest,
   UpdateTaskStatusRequest,
+  taskFilterSchema,
 } from "../dtos/tasks.dto";
 import { prisma } from "../lib/prisma";
 import { createTaskHistory } from "../services/taskHistory.service";
@@ -16,8 +17,21 @@ const taskInclude = {
   },
 } as const;
 
-export const getTasks = async (_req: Request, res: Response): Promise<void> => {
+export const getTasks = async (req: Request, res: Response): Promise<void> => {
+  const parsed = taskFilterSchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid query params", errors: parsed.error.flatten().fieldErrors });
+    return;
+  }
+  const { status, priority, technicianId, customerId } = parsed.data;
+
   const tasks = await prisma.taskItem.findMany({
+    where: {
+      ...(status && { status }),
+      ...(priority && { priority }),
+      ...(technicianId && { technicianId }),
+      ...(customerId && { customerId }),
+    },
     include: taskInclude,
     orderBy: { createdAt: "desc" },
   });
@@ -130,8 +144,19 @@ export const getMyTasks = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const parsed = taskFilterSchema.pick({ status: true, priority: true }).safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid query params", errors: parsed.error.flatten().fieldErrors });
+    return;
+  }
+  const { status, priority } = parsed.data;
+
   const tasks = await prisma.taskItem.findMany({
-    where: { technicianId: req.user!.userId },
+    where: {
+      technicianId: req.user!.userId,
+      ...(status && { status }),
+      ...(priority && { priority }),
+    },
     include: taskInclude,
     orderBy: { createdAt: "desc" },
   });

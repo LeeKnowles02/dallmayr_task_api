@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CreateTechnicianRequest, UpdateTechnicianRequest } from "../dtos/users.dto";
+import { CreateTechnicianRequest, ResetTechnicianPasswordRequest, UpdateTechnicianRequest } from "../dtos/users.dto";
 import { prisma } from "../lib/prisma";
 import { hashPassword } from "../services/password.service";
 import { User } from "../generated/prisma/client";
@@ -74,4 +74,26 @@ export const updateTechnician = async (
   const updated = await prisma.user.update({ where: { id }, data });
 
   res.json(excludePassword(updated));
+};
+
+export const resetTechnicianPassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const id = parseInt(req.params.id as string);
+  const { newPassword } = req.body as ResetTechnicianPasswordRequest;
+
+  const existing = await prisma.user.findFirst({
+    where: { id, role: "Technician" },
+  });
+
+  if (!existing) {
+    res.status(404).json({ message: "Technician not found" });
+    return;
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.user.update({ where: { id }, data: { passwordHash } });
+
+  res.json({ message: "Password reset successfully" });
 };

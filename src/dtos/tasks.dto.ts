@@ -37,6 +37,14 @@ export const updateTaskStatusSchema = z.object({
   completionNotes: z.string().optional(),
 });
 
+export const taskFilterSchema = z.object({
+  status: z.enum(taskStatusValues).optional(),
+  priority: z.enum(taskPriorityValues).optional(),
+  technicianId: z.coerce.number().int().positive().optional(),
+  customerId: z.coerce.number().int().positive().optional(),
+});
+
 export type CreateTaskRequest = z.infer<typeof createTaskSchema>;
 export type UpdateTaskRequest = z.infer<typeof updateTaskSchema>;
 export type UpdateTaskStatusRequest = z.infer<typeof updateTaskStatusSchema>;
+export type TaskFilterQuery = z.infer<typeof taskFilterSchema>;
