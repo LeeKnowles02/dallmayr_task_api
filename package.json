@@ -4,7 +4,7 @@
   "description": "Dallmayr Technician Task Management API",
   "main": "dist/app.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
+    "dev": "tsx watch src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
     "prisma:generate": "prisma generate",
@@ -14,7 +14,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
+    "@prisma/adapter-mariadb": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
